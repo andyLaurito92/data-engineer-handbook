@@ -47,7 +47,7 @@ today as (
 	where af1.year = 1970
 	group by actor, actorid, year
 )
-select
+	select
 	coalesce(y.actorid, t.actorid) as actorid,
 	coalesce(y.actor, t.actor) as actor,
 	case

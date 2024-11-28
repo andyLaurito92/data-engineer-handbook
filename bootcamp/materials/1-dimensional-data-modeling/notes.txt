@@ -1,0 +1,4 @@
+1. Pipelines should be idempotent
+
+- Don't user INSERT INTO without TRUNCATE! Otherwise you will be replicating data
+(besides producing issues in case of unique keys)
