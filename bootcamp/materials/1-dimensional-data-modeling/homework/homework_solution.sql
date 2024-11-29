@@ -80,7 +80,7 @@ drop table if exists actors_history_scd;
 create table if not exists actors_history_scd (
 	actorid text,
 	actor text,
-	is_active bool,
+	is_active boolean,
 	quality_class quality_class,
 	start_year INTEGER,
 	end_year INTEGER,
@@ -140,7 +140,7 @@ where end_year = 2000
 do $$ 
 begin
 create type scd_actor as (
-	is_active bool,
+	is_active boolean,
 	quality_class quality_class,
 	start_year integer,
 	end_year integer
