@@ -16,7 +16,7 @@ exception
 end $$;
 
 
-drop table actors;
+drop table if exists actors;
 create table if not exists actors (
 	actorid text,
 	actor text,
@@ -76,8 +76,8 @@ select * from actors where actor = 'Alain Delon' and current_year = 1970;
 
 --- 3. DDL for actors_history_scd
 
-drop table actors_history_scd;
-create table actors_history_scd (
+drop table if exists actors_history_scd;
+create table if not exists actors_history_scd (
 	actorid text,
 	actor text,
 	is_active bool,
@@ -137,12 +137,17 @@ where end_year = 2000
 
 --- 5. Incremental query for actors_history_scd
 
+do $$ 
+begin
 create type scd_actor as (
 	is_active bool,
 	quality_class quality_class,
 	start_year integer,
 	end_year integer
 )
+exception
+	when duplicate_object then null;
+end $$;
 
 -- with last_year cte we avoid having to join todays data with the historical data.
 --- In order to calculate unchanged values, changed values and new records we just 
