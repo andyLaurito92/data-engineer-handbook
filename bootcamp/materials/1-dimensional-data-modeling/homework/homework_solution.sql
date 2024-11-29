@@ -89,6 +89,8 @@ create table actors_history_scd (
 	primary key (actorid, start_year)
 );
 
+
+--- 4. Incremental query for actors_hisotry_scd
 insert into actors_history_scd
 with previous_dimension_values as (
 	select 
@@ -129,3 +131,8 @@ changed_record as (
 
 select * from changed_record;
 
+-- Select last value of dimensions per each actor
+select * from actors_history_scd 
+where end_year = 2000
+
+--- 5. Incremental query for actors_history_scd
