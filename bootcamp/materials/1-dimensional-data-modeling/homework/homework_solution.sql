@@ -136,3 +136,107 @@ select * from actors_history_scd
 where end_year = 2000
 
 --- 5. Incremental query for actors_history_scd
+
+create type scd_actor as (
+	is_active bool,
+	quality_class quality_class,
+	start_year integer,
+	end_year integer
+)
+
+-- with last_year cte we avoid having to join todays data with the historical data.
+--- In order to calculate unchanged values, changed values and new records we just 
+--- need to check last years values
+with last_year as ( 
+	select * from actors_history_scd
+	where current_year = 2000
+	and end_year = 2000
+),
+this_year as (
+	select * from actors
+	where current_year = 2001
+),
+historical_scd as (
+	select * from actors_history_scd 
+	where current_year = 2000
+	and end_year < 2000
+),
+new_actors as (
+	select
+		t.actorid,
+		t.actor,
+		t.is_active,
+		t.quality_class,
+		t.current_year as start_year,
+		t.current_year as end_year,
+		t.current_year as current_year
+	from last_year as y
+	full outer join this_year as t
+	on y.actorid = t.actorid
+	where y.actorid is null
+),
+unchanged_records as (
+	select 
+		t.actor,
+		t.actorid,
+		t.is_active,
+		t.quality_class,
+		y.start_year,
+		t.current_year,
+		t.current_year
+	from last_year as y
+	join this_year as t
+	on y.actorid = t.actorid
+	where 
+		y.is_active = t.is_active and
+		y.quality_class = t.quality_class
+),
+unnset_changed_records as (
+	select
+		y.actorid,
+		y.actor,
+		unnest(array[
+			row(
+				y.is_active,
+				y.quality_class,
+				y.start_year,
+				t.current_year
+			)::scd_actor,
+			row(
+				t.is_active,
+				t.quality_class,
+				t.current_year,
+				t.current_year
+			)::scd_actor
+		]) as records,
+		t.current_year as current_year
+	from last_year as y
+	join this_year as t
+	on y.actorid = t.actorid
+	where 	
+		y.quality_class <> t.quality_class or 
+		y.is_active <> t.is_active	
+),
+changed_records as (
+	select
+		actorid,
+		actor,
+		(records::scd_actor).*,
+		current_year
+	from unnset_changed_records
+)
+
+select * from historical_scd
+
+union all 
+
+select * from new_actors
+
+union all
+
+select * from unchanged_records
+
+union all 
+
+select * from changed_records
+; 
